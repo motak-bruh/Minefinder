@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MineFinder</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:tahoma;
+}
+
+body{
+min-height:100vh;
+color:white;
+background:linear-gradient(-45deg,#0f172a,#1e1b4b,#312e81,#581c87);
+background-size:400% 400%;
+animation:bgMove 15s ease infinite;
+overflow-x:hidden;
+}
+
+@keyframes bgMove{
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+}
+
+header{
+text-align:center;
+padding:30px 15px;
+}
+
+.logo{
+font-size:42px;
+font-weight:bold;
+text-shadow:0 0 25px cyan;
+}
+
+.subtitle{
+margin-top:10px;
+opacity:.8;
+}
+
+.search-box{
+display:flex;
+justify-content:center;
+gap:10px;
+padding:20px;
+flex-wrap:wrap;
+}
+
+.search-box input{
+width:320px;
+max-width:90%;
+padding:15px;
+border:none;
+border-radius:15px;
+font-size:16px;
+outline:none;
+}
+
+.search-box button{
+padding:15px 20px;
+border:none;
+border-radius:15px;
+cursor:pointer;
+font-weight:bold;
+transition:.3s;
+}
+
+.search-box button:hover{
+transform:scale(1.05);
+}
+
+.search-btn{
+background:#00e5ff;
+}
+
+.random-btn{
+background:#00ff95;
+}
+
+.card{
+display:none;
+width:95%;
+max-width:900px;
+margin:auto;
+margin-top:20px;
+padding:25px;
+border-radius:25px;
+background:rgba(255,255,255,.08);
+backdrop-filter:blur(12px);
+border:1px solid rgba(255,255,255,.15);
+animation:fade .4s;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+.player{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+align-items:center;
+gap:25px;
+}
+
+.preview{
+text-align:center;
+}
+
+#head{
+width:120px;
+image-rendering:pixelated;
+filter:drop-shadow(0 0 15px cyan);
+}
+
+#body{
+width:220px;
+image-rendering:pixelated;
+}
+
+.info{
+flex:1;
+min-width:250px;
+}
+
+.info h2{
+margin-bottom:15px;
+}
+
+.box{
+background:rgba(255,255,255,.08);
+padding:12px;
+border-radius:12px;
+margin:10px 0;
+}
+
+.download{
+display:inline-block;
+margin-top:15px;
+padding:12px 18px;
+border-radius:12px;
+background:#00ff95;
+color:black;
+font-weight:bold;
+text-decoration:none;
+}
+
+.loading{
+display:none;
+text-align:center;
+margin-top:15px;
+}
+
+.recent{
+width:95%;
+max-width:900px;
+margin:25px auto;
+padding:20px;
+border-radius:20px;
+background:rgba(255,255,255,.08);
+}
+
+.recent h3{
+margin-bottom:15px;
+}
+
+.recent-item{
+display:inline-block;
+margin:5px;
+padding:8px 12px;
+border-radius:10px;
+background:rgba(255,255,255,.12);
+cursor:pointer;
+}
+
+.features{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+gap:15px;
+width:95%;
+max-width:1000px;
+margin:30px auto;
+}
+
+.feature{
+background:rgba(255,255,255,.08);
+padding:20px;
+border-radius:20px;
+text-align:center;
+}
+
+footer{
+text-align:center;
+padding:35px;
+opacity:.7;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">⛏ MineFinder</div>
+<div class="subtitle">Minecraft Java Player Search</div>
+</header>
+
+<div class="search-box">
+<input id="username" placeholder="اسم پلیر را وارد کن">
+<button class="search-btn" onclick="searchPlayer()">جستجو</button>
+<button class="random-btn" onclick="randomPlayer()">🎲</button>
+</div>
+
+<div class="loading" id="loading">
+در حال جستجو...
+</div>
+
+<div class="card" id="result">
+
+<div class="player">
+
+<div class="preview">
+<img id="head">
+<br><br>
+<img id="body">
+</div>
+
+<div class="info">
+
+<h2 id="playerName">Player</h2>
+
+<div class="box">
+اسکین و پروفایل بازیکن
+</div>
+
+<a id="downloadBtn"
+class="download"
+target="_blank">
+دانلود اسکین
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="recent">
+<h3>آخرین جستجوها</h3>
+<div id="recentList"></div>
+</div>
+
+<div class="features">
+<div class="feature">🎨 نمایش اسکین</div>
+<div class="feature">📥 دانلود اسکین</div>
+<div class="feature">⚡ جستجوی سریع</div>
+<div class="feature">🎲 پلیر تصادفی</div>
+</div>
+
+<footer>
+MineFinder © 2026
+</footer>
+
+<script>
+
+const recentKey = "minefinder_recent";
+
+function saveRecent(name){
+
+let list =
+JSON.parse(localStorage.getItem(recentKey) || "[]");
+
+list = list.filter(x => x !== name);
+
+list.unshift(name);
+
+list = list.slice(0,5);
+
+localStorage.setItem(
+recentKey,
+JSON.stringify(list)
+);
+
+renderRecent();
+
+}
+
+function renderRecent(){
+
+const box =
+document.getElementById("recentList");
+
+const list =
+JSON.parse(localStorage.getItem(recentKey) || "[]");
+
+box.innerHTML = "";
+
+list.forEach(player=>{
+
+const div =
+document.createElement("div");
+
+div.className = "recent-item";
+
+div.innerText = player;
+
+div.onclick = ()=>{
+
+document.getElementById("username").value =
+player;
+
+searchPlayer();
+
+};
+
+box.appendChild(div);
+
+});
+
+}
+
+function randomPlayer(){
+
+const players = [
+"Dream",
+"Notch",
+"jeb_",
+"Technoblade",
+"TommyInnit",
+"BadBoyHalo",
+"GeorgeNotFound"
+];
+
+const random =
+players[Math.floor(Math.random()*players.length)];
+
+document.getElementById("username").value =
+random;
+
+searchPlayer();
+
+}
+
+async function searchPlayer(){
+
+const username =
+document.getElementById("username").value.trim();
+
+if(!username) return;
+
+document.getElementById("loading").style.display =
+"block";
+
+document.getElementById("result").style.display =
+"none";
+
+setTimeout(()=>{
+
+document.getElementById("playerName").innerText =
+username;
+
+document.getElementById("head").src =
+`https://mc-heads.net/head/${username}/200`;
+
+document.getElementById("body").src =
+`https://mc-heads.net/body/${username}/250`;
+
+document.getElementById("downloadBtn").href =
+`https://mc-heads.net/download/${username}`;
+
+document.getElementById("loading").style.display =
+"none";
+
+document.getElementById("result").style.display =
+"block";
+
+saveRecent(username);
+
+},500);
+
+}
+
+document
+.getElementById("username")
+.addEventListener("keydown",function(e){
+
+if(e.key==="Enter"){
+searchPlayer();
+}
+
+});
+
+renderRecent();
+
+</script>
+
+</body>
+</html>
